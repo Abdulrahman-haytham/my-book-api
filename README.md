@@ -39,7 +39,7 @@
 ## ⚙️ متطلبات التشغيل
 
 - [Node.js](https://nodejs.org/) (يفضل إصدار 18 أو أحدث)
-- [npm](https://www.npmjs.com/) أو [yarn](https://yarnpkg.com/)
+- [npm](https://www.npmjs.com/) 
 - قاعدة بيانات [PostgreSQL](https://www.postgresql.org/) تعمل على جهازك أو على خدمة سحابية.
 
 ---
@@ -50,7 +50,7 @@
 
 1.  **نسخ المستودع (Clone the repository):**
     ```bash
-    git clone https://github.com/your-username/my-book-api.git
+    git clone https://github.com/Abdulrahman-haytham/my-book-api/tree/master
     cd my-book-api
     ```
 
