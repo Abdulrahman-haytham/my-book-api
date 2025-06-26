@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// نموذج المستخدم: يحتوي على كل المعلومات الشخصية والاجتماعية
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  username          String    @unique // مهم للـ URL ولتسجيل الدخول
+  password          String
+  
+  displayName       String?   // الاسم الذي يظهر في الملف الشخصي
+  bio               String?   @db.Text
+  avatarUrl         String?   // رابط الصورة الرمزية
+  bannerUrl         String?   // رابط صورة البانر
+  birthday          DateTime?
+  gender            String?
+  socialLinks       Json?     // لتخزين روابط السوشيال ميديا كـ { "twitter": "...", "facebook": "..." }
+
+  lastActiveAt      DateTime? @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // --- علاقات المستخدم ---
+  novels            Novel[]   // الروايات التي كتبها هذا المستخدم (كمؤلف)
+  reviews           Review[]  // المراجعات التي كتبها هذا المستخدم
+  passwordResets    PasswordReset[]
+}
+
+// نموذج الرواية: هذا هو المحتوى العام الذي ينشره المؤلفون
+model Novel {
+  id                String    @id @default(cuid())
+  title             String
+  synopsis          String    @db.Text
+  coverImageUrl     String?
+
+  // --- حقول للفلترة والفرز ---
+  isFeatured        Boolean   @default(false)     // للروايات المميزة في الصفحة الرئيسية
+  viewsCount        Int       @default(0)         // لفرز "الأكثر مشاهدة"
+  averageRating     Float     @default(0)         // لفرز "الأعلى تقييماً"
+  ownership         Ownership @default(Original)  // Original or Fanfiction
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // --- العلاقات ---
+  author            User      @relation(fields: [authorId], references: [id])
+  authorId          String
+
+  chapters          Chapter[] // الرواية الواحدة تحتوي على العديد من الفصول
+  reviews           Review[]  // الرواية الواحدة لديها العديد من المراجعات
+  genres            Genre[]   // علاقة many-to-many مع التصنيفات
+  contentWarnings   ContentWarning[] // علاقة many-to-many مع التحذيرات
+}
+
+// نموذج الفصل: محتوى الرواية الفعلي
+model Chapter {
+  id             String    @id @default(cuid())
+  title          String
+  chapterNumber  Int
+  content        String    @db.Text
+  wordCount      Int       @default(0) // يُحسب في الباك اند عند الحفظ
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // --- العلاقات ---
+  novel          Novel     @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  novelId        String
+}
+
+// نموذج المراجعة/التعليق العام
+model Review {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  rating    Int      // تقييم من 1-5
+  createdAt DateTime @default(now())
+
+  // --- العلاقات ---
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String   // من كتب المراجعة
+  novel     Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  novelId   String   // عن أي رواية كُتبت المراجعة
+}
+
+// --- نماذج للفلترة والتصنيف ---
+model Genre {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  novels  Novel[]  // علاقة many-to-many
+}
+
+model ContentWarning {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  novels  Novel[]  // علاقة many-to-many
+}
+
+// نموذج مساعد لعملية إعادة تعيين كلمة المرور
+model PasswordReset {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   
+}
+
+// --- Enums ---
+enum Ownership {
+  Original
+  Fanfiction
+}
